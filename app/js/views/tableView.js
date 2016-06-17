@@ -1,6 +1,5 @@
 /* global $, window */
-import {View, history} from 'backbone';
-import _ from 'underscore';
+import {View} from 'backbone';
 
 import 'bootstrap';
 import jsyaml from 'js-yaml';
@@ -23,10 +22,10 @@ export default class TableView extends View {
       'click .gohan_create': 'createModel',
       'click .gohan_delete': 'deleteModel',
       'click .gohan_update': 'updateModel',
-      'click a.title': 'filter',
+      'click a.title': 'sortData',
       'keyup input.search': 'searchByKey',
       'change select.search': 'searchByField',
-      'click nav li:not(.disabled) a': 'pagination'
+      'click nav li:not(.disabled) a': 'paginationHandler'
     };
   }
   constructor(options) {
@@ -40,8 +39,12 @@ export default class TableView extends View {
     this.fragment = options.fragment;
     this.childview = options.childview;
     this.polling = options.polling;
-    this.activePage = Number(options.page) > 0 ? Number(options.page) - 1 : 0;
-    this.activeFilter = {
+    this.activePage = 1;
+    this.paginationSettings = {
+      start: 1,
+      limit: 7
+    };
+    this.activeSortFilter = {
       by: '',
       reverse: false
     };
@@ -49,78 +52,126 @@ export default class TableView extends View {
       sortKey: '',
       propField: ''
     };
-    this.pageSize = 25;
+
+    this.searchDelay = 500;
+    this.searchTimeout = undefined;
 
     if (this.childview) {
       this.parentProperty = this.schema.get('parent') + '_id';
     }
 
-    this.collection.fetch().then(() => {
-      this.render();
-      if ( this.polling ) {
-        this.collection.startLongPolling();
-      }
-      this.listenTo(this.collection, 'update', this.render);
-    }, (...param) => {
-      this.errorView.render(param[1]);
+    if (this.collection !== undefined) {
+      this.collection.getPage().then(() => {
+        this.searchQuery.propField = $('select.search', this.$el).val();
+        if ( this.polling ) {
+          this.collection.startLongPolling();
+        }
+      }, (...params) => {
+        this.errorView.render(params[0]);
+      });
+    }
+
+    this.listenTo(this.collection, 'update', this.render);
+  }
+  searchByKey() {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+
+      this.fetchData();
+
+    }, this.searchDelay);
+  }
+  searchByField() {
+    this.fetchData();
+  }
+  fetchData() {
+    const property = $('select.search', this.$el).val();
+    const value = $('input.search', this.$el).val();
+
+    this.searchQuery = {
+      sortKey: value,
+      propField: property
+    };
+
+    if (value === '') {
+      this.fetchByQuery();
+    } else {
+      this.fetchByQuery(property, value);
+    }
+  }
+  getPage(pageNo) {
+    this.collection.getPage(pageNo - 1).then(() => {
+      $('select.search', this.$el).val(this.searchQuery.propField);
+    }, (...params) => {
+      this.errorView.render(params[0]);
     });
   }
-  searchByKey(event) {
-    this.searchQuery.sortKey = event.currentTarget.value;
-    this.render();
+  fetchByQuery(property = 'name', value) {
+    this.activePage = 1;
 
-    $('input.search', this.$el).focus().val('').val(this.searchQuery.sortKey);
-    $('select.search', this.$el).val('').val(this.searchQuery.propField);
-  }
-  searchByField(event) {
-    this.searchQuery.propField = event.currentTarget.value;
-    this.render();
+    this.collection.resetFilters();
+    this.collection.filter(property, value).then(() => {
+      $('select.search', this.$el).val(this.searchQuery.propField);
+      $('input.search', this.$el).focus().val(this.searchQuery.sortKey);
 
-    $('input.search', this.$el).val('').val(this.searchQuery.sortKey);
-    $('select.search', this.$el).focus().val('').val(this.searchQuery.propField);
+    }, (...params) => {
+      this.errorView.render(params[0]);
+    });
   }
-  filter(event) {
+
+  sortData(event) {
     const id = event.currentTarget.dataset.id;
 
-    if (this.activeFilter.by !== id) {
-      this.activeFilter.by = id;
-      this.activeFilter.reverse = false;
-    } else if (this.activeFilter.by === id && !this.activeFilter.reverse) {
-      this.activeFilter.reverse = true;
+    if (this.activeSortFilter.by !== id) {
+      this.activeSortFilter.by = id;
+      this.activeSortFilter.reverse = false;
+    } else if (this.activeSortFilter.by === id && !this.activeSortFilter.reverse) {
+      this.activeSortFilter.reverse = true;
     } else {
-      this.activeFilter.by = '';
-      this.activeFilter.reverse = false;
+      this.activeSortFilter.by = '';
+      this.activeSortFilter.reverse = false;
     }
-    this.render();
+
+    const key = this.activeSortFilter.by;
+    const order = this.activeSortFilter.reverse ? 'desc' : 'asc';
+
+    this.collection.sort(key, order).then(() => {
+
+    }, (...params) => {
+      this.errorView.render(params[0]);
+    });
   }
-  pagination(event) {
+  paginationHandler(event) {
+    event.stopPropagation();
     let newActivePage = event.currentTarget.dataset.id;
+    let showMorePages = event.currentTarget.dataset.more;
 
     if (newActivePage === 'next') {
-      newActivePage = $('a', $('nav li.active', this.$el).next()).data('id');
+      newActivePage = Number(this.activePage) + 1;
     } else if (newActivePage === 'prev') {
-      newActivePage = $('a', $('nav li.active', this.$el).prev()).data('id');
+      newActivePage = Number(this.activePage) - 1;
     }
 
-    const activePage = $('nav li.active a', this.$el).data('id');
-    const newPageIndicator = $('[data-id=' + newActivePage + ']', this.$el).parent();
-    const activePageIndicator = $('[data-id=' + activePage + ']', this.$el).parent();
-
-    $('#page' + activePage, this.$el).addClass('hidden');
-    $('#page' + newActivePage, this.$el).removeClass('hidden');
-
-    activePageIndicator.removeClass('active');
-    newPageIndicator.addClass('active');
-
-    $('li.disabled', this.$el).removeClass('disabled');
-
-    if (newPageIndicator.next().children().data('id') === 'next') {
-      newPageIndicator.next().addClass('disabled');
-    } else if (newPageIndicator.prev().children().data('id') === 'prev') {
-      newPageIndicator.prev().addClass('disabled');
+    if (this.activePage === Number(newActivePage)) {
+      return;
     }
 
-    history.navigate(history.getFragment().replace(/(\/page\/\w+)/, '') + '/page/' + newActivePage);
+    if (newActivePage === this.paginationSettings.start - 1) {
+      showMorePages = 'left';
+    } else if (newActivePage === this.paginationSettings.start + this.paginationSettings.limit - 1) {
+      showMorePages = 'right';
+    }
+
+    if (showMorePages === 'right') {
+      this.paginationSettings.start = Number(newActivePage);
+    } else if (showMorePages === 'left') {
+      this.paginationSettings.start = this.paginationSettings.start - this.paginationSettings.limit + 1;
+      if (this.paginationSettings.start < 1)
+        this.paginationSettings.start = 1;
+    }
+
+    this.activePage = Number(newActivePage);
+    this.getPage(Number(newActivePage));
   }
   dialogForm(action, formTitle, data, onsubmit) {
     this.schema.filterByAction(action, this.parentProperty).then(schema => {
@@ -142,16 +193,17 @@ export default class TableView extends View {
   toServer(data) {
     return this.schema.toServer(data);
   }
-  createModel() {
+  createModel(event) {
+    event.stopPropagation();
     const data = this.toLocal({});
     const formTitle = '<h4>Create ' + this.schema.get('title') + '</h4>';
     const action = 'create';
     const onsubmit = values => {
       values = this.toServer(values);
       values.isNew = true;
-      this.collection.create(values, {wait: true}).then(() => {
+      this.collection.create(values).then(() => {
         this.dialog.close();
-        this.render();
+        this.fetchData();
       }, error => {
         this.errorView.render(...error);
         this.dialog.stopSpin();
@@ -170,7 +222,7 @@ export default class TableView extends View {
     const onsubmit = values => {
       values = this.toServer(values);
 
-      model.save(values, {wait: true}).then(() => {
+      model.save(values).then(() => {
         this.collection.trigger('update');
         this.dialog.close();
       }, error => {
@@ -189,7 +241,7 @@ export default class TableView extends View {
     const id = $target.data('id');
     const model = this.collection.get(String(id));
 
-    model.destroy({wait: true}).then(() => {
+    model.destroy().then(() => {
       this.collection.fetch().catch(error => this.errorView.render(...error));
     }, error => this.errorView.render(...error));
   }
@@ -237,85 +289,16 @@ export default class TableView extends View {
     return value;
   }
 
-  /**
-   * Filters array and return new array.
-   * @param {Array} array
-   * @param {string} searchQuery
-   * @returns {Array}
-   */
-  filterArray(array, searchQuery) {
-    if (this.searchQuery.sortKey === '') {
-      return array;
-    }
-    return array.filter(value => {
-
-      if (searchQuery.propField !== '') {
-        const field = searchQuery.propField.toLowerCase();
-
-        if (value.hasOwnProperty(field) && value[field].toString().includes(searchQuery.sortKey)) {
-          return true;
-        }
-      } else {
-        for (let key in value) {
-          let val = value[key];
-
-          if (val && val.toString().includes(searchQuery.sortKey.toString())) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    });
-  }
-
-  /**
-   * Sorts array by specified property and return new array.
-   * @param {Array} array
-   * @param {string} by
-   * @param {boolean} reverse
-   * @returns {Array}
-   */
-  sortArray(array, by, reverse) {
-    const sortedArray = _.sortBy(array, value => {
-      if (by === '') {
-        return value;
-      }
-
-      if (_.isString(value[by])) {
-        return value[by].toLowerCase();
-      }
-      return value[by];
-    });
-
-    if (reverse === true) {
-      return sortedArray.reverse();
-    }
-    return sortedArray;
-  }
   render() {
-    const self = this;
-
     let list = this.collection.map(model => {
       const data = model.toJSON();
       const result = Object.assign({}, data);
 
       for (let key in data) {
-        result[key] = self.renderProperty(data, key);
+        result[key] = this.renderProperty(data, key);
       }
       return result;
     });
-
-    list = this.filterArray(list, this.searchQuery);
-
-    list = this.sortArray(list, this.activeFilter.by, this.activeFilter.reverse);
-
-    const splitIntoPages = [];
-
-    for (let i = 0; i < list.length; i += this.pageSize) {
-      splitIntoPages.push(list.slice(i, i + this.pageSize));
-    }
-    list = splitIntoPages;
 
     if (this.app && !this.childview) {
       this.app.breadCrumb.update([this.collection]);
@@ -324,20 +307,23 @@ export default class TableView extends View {
     this.$el.html(this.template({
       data: list,
       activePage: this.activePage,
+      pageCount: this.collection.getPageCount(),
       schema: this.schema.toJSON(),
       searchQuery: this.searchQuery,
-      sort: {
-        by: this.activeFilter.by,
-        reverse: this.activeFilter.reverse
-      },
-      parentProperty: this.parentProperty
+      sort: this.activeSortFilter,
+      parentProperty: this.parentProperty,
+      pagination: this.paginationSettings,
+      fragment: this.fragment
     }));
     this.$('button[data-toggle=hover]').popover();
     return this;
   }
   close() {
-    if ( this.polling ) {
+    if (this.polling) {
       this.collection.stopLongPolling();
+    }
+    if (this.collection) {
+      this.collection.resetFilters();
     }
     this.remove();
   }
