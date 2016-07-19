@@ -23,9 +23,6 @@ Form.Fieldset.template = _.template(
 Form.Field.template = _.template(
   '<div class="nested-form-group field-<%= key  %>">' +
   '  <label class="control-label" for="<%= editorId %>"><%= title %></label>' +
-  '  <% if (help) { %>' +
-  '  <span class="help-description"> <%= help %></span>' +
-  '  <% } %>' +
   '  <div class="controls">' +
   '    <span data-editor></span>' +
   '    <div class="help-block"><span class="error" data-error></span></div>' +
@@ -36,9 +33,6 @@ Form.Field.template = _.template(
 Form.NestedField.template = _.template(
   '<div class="nested-form-group field-<%= key  %>">' +
   '  <label class="control-label" for="<%= editorId %>"><%= title %></label>' +
-  '  <% if (help) { %>' +
-  '  <span class="help-description"> <%= help %></span>' +
-  '  <% } %>' +
   '  <div class="controls">' +
   '    <span data-editor></span>' +
   '    <div class="help-block"><span class="error" data-error></span></div>' +
