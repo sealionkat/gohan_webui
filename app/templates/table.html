@@ -89,7 +89,7 @@
 
           var urlPattern = /^((http|https):\/\/)/;
           if (property['format'] === 'uri' && urlPattern.test(d[key])) { %>
-          <td><a href="<%- d[key] %>"> link </a></td>
+          <td><a href="<%- d[key] %>" target="blank"> link </a></td>
         <% }else if(title === 'name' || title === 'title'){ %>
           <td><a data-id="<%= d[key] %>" href="#<%= fragment %>/<%= d.id %>"><%= _.escape(d[key]) %></a></td>
         <% } else { %>

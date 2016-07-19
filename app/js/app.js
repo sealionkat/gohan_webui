@@ -23,13 +23,18 @@ import Config from './models/configModel';
 const config = new Config({url: 'config.json'});
 
 config.fetch().then(() => {
+  const router = new Router();
   const rootView = new AppView({
-    router: new Router(),
+    router: router,
     config,
     viewClass: {
       schema: {
         table: SchemaView
       }}
+  });
+
+  router.route('', 'toppage', () => {
+    router.navigate('v1.0/tenant/networks')
   });
 
   $('body').append(rootView.render().el);

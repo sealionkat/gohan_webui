@@ -231,8 +231,8 @@ export default class TableView extends View {
         Object.assign(values, {[this.parent + '_id']: this.parentId});
       }
       this.collection.create(values, {wait: true}).then(() => {
-        this.dialog.close();
         this.fetchData();
+        this.dialog.close();
       }, error => {
         this.dialog.errorView.render(...error);
         this.dialog.stopSpin();
@@ -260,6 +260,7 @@ export default class TableView extends View {
 
       model.save(values, {wait: true}).then(() => {
         this.collection.trigger('update');
+        this.fetchData();
         this.dialog.close();
         event.currentTarget.disabled = false;
       }, error => {
