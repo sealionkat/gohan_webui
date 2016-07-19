@@ -144,7 +144,8 @@ export default class DialogView extends View {
     for (let key in this.schema) {
       if (this.schema.hasOwnProperty(key)) {
         const field = this.schema[key];
-
+        // add helptext to html
+        this.schema[key].editorAttrs = {placeholder: this.schema[key]['help']};
         const nestedCreationAllowed = this.addingRelationDialog.includes(field.title);
 
         if (field.hasOwnProperty('relation') && field.type.toLowerCase() === 'select' && nestedCreationAllowed) {
@@ -194,7 +195,7 @@ export default class DialogView extends View {
     this.dialog.addButton({
       id: 'submit',
       label: 'Submit',
-      cssClass: 'btn-primary',
+      cssClass: 'btn btn-mini btn-primary btnSave',
       action: () => {
         var error = this.form.validate();
 
