@@ -1,4 +1,4 @@
-/* global $ */
+/* global $ window */
 import {View} from 'backbone';
 
 import 'bootstrap';
@@ -126,8 +126,9 @@ export default class TableView extends View {
     this.collection.filterByQuery(property, value).then(() => {
       $('[data-gohan="search"] select', this.$el).val(this.searchQuery.propField);
       $('[data-gohan="search"] input', this.$el).focus().val(this.searchQuery.sortKey);
-
     }, error => {
+      this.userModel.unsetAuthData();
+      window.location.reload();
       this.errorView.render(...error);
     });
   }

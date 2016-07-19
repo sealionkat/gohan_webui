@@ -78,8 +78,6 @@ Backbone.Form.editors.List = class List extends Backbone.Form.editors.Base {
       value.forEach(itemValue => {
         this.addItem(itemValue);
       });
-    } else if (!this.Editor.isAsync) {
-      this.addItem(this.schema.default);
     }
 
     if (this.isObjectType) {

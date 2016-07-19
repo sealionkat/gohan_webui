@@ -1,4 +1,4 @@
-/* global window */
+/* global window FileReader $ */
 import Backbone from 'backbone';
 import 'backbone-forms';
 
@@ -14,14 +14,33 @@ class CodeEditor extends Backbone.Form.editors.Base {
     super(options);
 
     this.format = options.schema.format;
-    this.editor = window.ace.edit(this.el);
-    this.$el.css('height', '300px');
+    const editor = $('<div></div>');
+    this.$el.append(editor);
+    this.editor = window.ace.edit(editor.get(0));
+    editor.css('height', '300px');
     this.editor.setTheme('ace/theme/chrome');
     this.editor.getSession().setMode('ace/mode/' + this.format);
     this.editor.$blockScrolling = Infinity;
   }
 
   render() {
+    if (window.File && window.FileReader && window.FileList && window.Blob) {
+      const fileEl = $('<input type="file"/>');
+      fileEl.on('change', evt => {
+        const files = evt.target.files;
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+          const text = reader.result;
+          this.setValue(text);
+        };
+        reader.readAsText(file);
+      });
+      this.$el.append(fileEl);
+    }
+    if ( this.value === 'null\n') {
+      this.value = '';
+    }
     this.setValue(this.value);
     return this;
   }

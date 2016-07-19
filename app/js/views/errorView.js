@@ -71,7 +71,6 @@ export default class ErrorView extends View {
     this.delegateEvents();
     return this;
   }
-
   close() {
     this.$el.html('<div></div>');
   }

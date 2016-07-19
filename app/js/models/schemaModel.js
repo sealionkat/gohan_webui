@@ -748,8 +748,8 @@ export default class SchemaModel extends Model {
       }
 
       if (schema.relation !== undefined) {
-        const enumValues = [];
-        const options = {};
+        const enumValues = [''];
+        const options = {'': ''};
         const headers = {};
 
         headers['X-Auth-Token'] = this.collection.userModel.authToken();

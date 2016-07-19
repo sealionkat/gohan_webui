@@ -84,6 +84,7 @@ export default class UserModel extends Model {
           this.fetchTenant(resolve, reject);
         },
         error: (...params) => {
+          this.unsetAuthData();
           reject(params);
         }
       } );
@@ -107,6 +108,7 @@ export default class UserModel extends Model {
         resolve(tenants);
       },
       error: ( ...params ) => {
+        this.unsetAuthData();
         reject(params);
       }
     } );
@@ -134,6 +136,7 @@ export default class UserModel extends Model {
           resolve(params);
         },
         error: (...params) => {
+          this.unsetAuthData();
           reject(params);
         }
       } );

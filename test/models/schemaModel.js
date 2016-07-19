@@ -453,9 +453,11 @@ describe('SchemaModel ', () => {
           properties: {
             parent: {
               enum: [
+                '',
                 'sampleIdFoo'
               ],
               options: {
+                '': '',
                 sampleIdFoo: 'sample_name_bar'
               },
               relation: 'sampleParent'

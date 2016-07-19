@@ -25,7 +25,7 @@ const config = new Config({url: 'config.json'});
 config.fetch().then(() => {
   const router = new Router();
   const rootView = new AppView({
-    router: router,
+    router,
     config,
     viewClass: {
       schema: {
@@ -34,7 +34,7 @@ config.fetch().then(() => {
   });
 
   router.route('', 'toppage', () => {
-    router.navigate('v1.0/tenant/networks')
+    router.navigate('v1.0/tenant/networks');
   });
 
   $('body').append(rootView.render().el);
