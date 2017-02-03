@@ -5,13 +5,50 @@ import Form from 'react-jsonschema-form';
 import widgets from './formComponents/widgets';
 import fields from './formComponents/fields';
 import Template from './formComponents/Template';
+import _ from 'lodash';
 
 import {fetchRelationFields, clearData} from './DialogActions';
 
-export class GeneratedDialog extends Component {
-// class GeneratedDialog extends Component {
+class GeneratedDialog extends Component {
   componentDidMount() {
     this.props.fetchRelationFields(this.props.schema.schema, this.props.action, this.props.schema.parent);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.state === null || this.state.currentSchema === undefined) {
+      let currentSchema = _.cloneDeep(nextProps.dialogReducer.schema);
+      let currentPropertiesOrder = _.cloneDeep(nextProps.dialogReducer.schema.propertiesOrder);
+
+      currentSchema.properties.test = {
+        description: 'Test checkbox',
+        title: 'Checkbox',
+        type: 'boolean'
+      };
+      currentPropertiesOrder.push('test');
+
+      const formData = currentPropertiesOrder.reduce(
+        (result, item) => {
+          result[item] = nextProps.data[item];
+          result[item] = nextProps.data[item];
+          return result;
+        }, {}
+      );
+
+      let currentUiSchema = {
+        'ui:order': currentPropertiesOrder,
+        name:
+        {
+          'ui:widget': 'textarea'
+        }
+      };
+
+      this.setState({
+        currentSchema,
+        currentPropertiesOrder,
+        currentUiSchema,
+        formData
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -51,16 +88,12 @@ export class GeneratedDialog extends Component {
 
             return (
               <div>
-                <Form ref={c => {this.form = c;}} schema={this.props.dialogReducer.schema}
+                <Form ref={c => {
+                  this.form = c;
+                }} schema={this.state.currentSchema}
                   fields={fields} widgets={widgets}
-                  FieldTemplate={Template} formData={
-                    this.props.dialogReducer.schema.propertiesOrder.reduce(
-                      (result, item) => {
-                        result[item] = this.props.data[item];
-                        return result;
-                      }, {}
-                    )}
-                  uiSchema={{'ui:order': this.props.dialogReducer.schema.propertiesOrder}} onSubmit={this.handleSubmit}
+                  FieldTemplate={Template} formData={this.state.formData}
+                  uiSchema={this.state.currentUiSchema} onSubmit={this.handleSubmit}
                   showErrorList={false}>
                   <div/>
                 </Form>
