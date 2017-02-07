@@ -36,9 +36,9 @@ class GeneratedDialog extends Component {
 
       let currentUiSchema = {
         'ui:order': currentPropertiesOrder,
-        name:
+        test:
         {
-          'ui:widget': 'textarea'
+          'ui:widget': 'radio'
         }
       };
 
