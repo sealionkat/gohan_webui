@@ -1,14 +1,26 @@
 import React, {Component, PropTypes} from 'react';
 import {Menu, MenuItem} from '@blueprintjs/core';
+import _ from 'lodash';
 
 export default class SidebarMenu extends Component {
-  render() {
-    const sidebarMenuItems = [];
+  constructor(props) {
+    super(props);
 
-    if (this.props.schemaReducer !== undefined) {
-      this.props.schemaReducer.data.forEach((item, index) => {
+    this.state = {
+      searchString: '',
+      menuItems: [],
+      originalMenuItems: []
+    };
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.schemaReducer !== undefined && nextProps.schemaReducer.data !== undefined) {
+      const menuItems = [];
+      const {data} = nextProps.schemaReducer;
+
+      data.forEach((item, index) => {
         if (!item.parent && item.metadata.type !== 'metaschema') {
-          sidebarMenuItems.push(
+          menuItems.push(
             <MenuItem item={item}
               key={index}
               text={item.title}
@@ -18,12 +30,46 @@ export default class SidebarMenu extends Component {
           );
         }
       });
+
+      let originalMenuItems = _.cloneDeep(menuItems);
+
+      this.setState({menuItems, originalMenuItems});
+    }
+  }
+
+  handleSearchChange = event => {
+    const searchString = event.target.value.replace(/[\(\)\[\]]/g, '\\$&');
+    const searchStringRE = new RegExp(searchString, 'i');
+    const originalMenuItems = _.cloneDeep(this.state.originalMenuItems);
+
+    if (searchString === '' || searchString.length === 0) {
+      this.setState({searchString, menuItems: originalMenuItems});
+
+      return;
     }
 
+    let menuItems = originalMenuItems.filter(item => {
+      return searchStringRE.test(item.props.text);
+    });
+
+    this.setState({searchString, menuItems});
+  };
+
+
+  render() {
     return (
-      <Menu className="pt-menu pt-large pt-elevation-2 pt-fixed-top sidebar">
-        {sidebarMenuItems}
-      </Menu>
+      <div className="pt-elevation-2 pt-fixed-top sidebar">
+        <div className="sidebar-search">
+          <label className="pt-label">
+            <input type="text" className="pt-input"
+              placeholder="search in sidebar" onChange={this.handleSearchChange}
+            />
+          </label>
+        </div>
+        <Menu className="pt-menu pt-large">
+          {this.state.menuItems}
+        </Menu>
+      </div>
     );
   }
 }
@@ -31,4 +77,3 @@ export default class SidebarMenu extends Component {
 SidebarMenu.propTypes = {
   schemaReducer: PropTypes.object
 };
-
