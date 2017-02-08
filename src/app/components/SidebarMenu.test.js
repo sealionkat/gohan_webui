@@ -111,12 +111,8 @@ describe('< SidebarMenu />', function () {
       <SidebarMenu/>
     );
 
-    wrapper.should.have.state('menuItems');
-    wrapper.state('menuItems').should.be.deep.equal([]);
     wrapper.should.have.state('searchString');
     wrapper.state('searchString').should.be.equal('');
-    wrapper.should.have.state('originalMenuItems');
-    wrapper.state('originalMenuItems').should.be.deep.equal([]);
   });
 
   it('should call onChange when changed input value', () => {
@@ -162,7 +158,7 @@ describe('< SidebarMenu />', function () {
     wrapper.update();
     wrapper.find('[type="text"]').simulate('change', {target: {value: ''}});
 
-    wrapper.state('menuItems').should.have.length(2);
+    wrapper.find(MenuItem).should.have.length(2);
   });
 
   it('should have filtered menu items when search string is not empty', () => {
@@ -198,7 +194,7 @@ describe('< SidebarMenu />', function () {
     wrapper.update();
     wrapper.find('[type="text"]').simulate('change', {target: {value: 'title2'}});
 
-    wrapper.state('menuItems').should.have.length(1);
+    wrapper.find(MenuItem).should.have.length(1);
   });
 
   it('should have 0 menu items when search string does not match any item', () => {
@@ -234,6 +230,6 @@ describe('< SidebarMenu />', function () {
     wrapper.update();
     wrapper.find('[type="text"]').simulate('change', {target: {value: 'title4'}});
 
-    wrapper.state('menuItems').should.have.length(0);
+    wrapper.find(MenuItem).should.have.length(0);
   });
 });
