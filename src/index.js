@@ -10,6 +10,9 @@ import createStore from './app/store';
 import {fetchConfig} from './config/ConfigActions';
 import {updateLocation} from './location/LocationActions';
 
+import Perf from 'react-addons-perf';
+window.Perf = Perf;
+
 
 const store = createStore(window.devToolsExtension && window.devToolsExtension());
 store.unsubscribeHistory = hashHistory.listen(updateLocation(store));
