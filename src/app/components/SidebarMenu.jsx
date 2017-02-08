@@ -1,60 +1,46 @@
 import React, {Component, PropTypes} from 'react';
 import {Menu, MenuItem} from '@blueprintjs/core';
-import _ from 'lodash';
 
 export default class SidebarMenu extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      searchString: '',
-      menuItems: [],
-      originalMenuItems: []
+      searchString: ''
     };
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.schemaReducer !== undefined && nextProps.schemaReducer.data !== undefined) {
-      const menuItems = [];
-      const {data} = nextProps.schemaReducer;
-
-      data.forEach((item, index) => {
-        if (!item.parent && item.metadata.type !== 'metaschema') {
-          menuItems.push(
-            <MenuItem item={item}
-              key={index}
-              text={item.title}
-              href={'#/' + item.plural}
-              className="item"
-            />
-          );
-        }
-      });
-
-      let originalMenuItems = _.cloneDeep(menuItems);
-
-      this.setState({menuItems, originalMenuItems});
-    }
   }
 
   handleSearchChange = event => {
     const searchString = event.target.value.replace(/[\(\)\[\]]/g, '\\$&');
-    const searchStringRE = new RegExp(searchString, 'i');
-    const originalMenuItems = _.cloneDeep(this.state.originalMenuItems);
 
-    if (searchString === '' || searchString.length === 0) {
-      this.setState({searchString, menuItems: originalMenuItems});
-
-      return;
-    }
-
-    let menuItems = originalMenuItems.filter(item => {
-      return searchStringRE.test(item.props.text);
-    });
-
-    this.setState({searchString, menuItems});
+    this.setState({searchString});
   };
 
+  buildMenuItems() {
+    if (this.props.schemaReducer !== undefined) {
+      const {data} = this.props.schemaReducer;
+      const {searchString} = this.state;
+      const searchStringRE = new RegExp(searchString, 'i');
+      const menuItems = [];
+
+      data.forEach((item, index) => {
+        if (!item.parent && item.metadata.type !== 'metaschema') {
+          if (searchString === '' || searchString.length === 0 || searchStringRE.test(item.title)) {
+            menuItems.push(
+              <MenuItem item={item}
+                key={index}
+                text={item.title}
+                href={'#/' + item.plural}
+                className="item"
+              />
+            );
+          }
+        }
+      });
+
+      return menuItems;
+    }
+  }
 
   render() {
     return (
@@ -67,7 +53,7 @@ export default class SidebarMenu extends Component {
           </label>
         </div>
         <Menu className="pt-menu pt-large">
-          {this.state.menuItems}
+          {this.buildMenuItems()}
         </Menu>
       </div>
     );
