@@ -129,7 +129,8 @@ class Select extends Component {
     let selectedItem = '';
 
     if (Array.isArray(value) && value.length !== 0) {
-      selectedItem = value.map(item => haystack.find(
+      const filteredValue = value.filter(item => item !== undefined);
+      selectedItem = filteredValue.map(item => haystack.find(
         hay => {
           if (typeof hay === 'object') {
             return hay.value === item;
@@ -137,7 +138,7 @@ class Select extends Component {
             return hay === item;
           }
         }
-      ).label).reduce((result, item) => `${result}, ${item}`);
+      ).label).reduce((result, item) => `${result}, ${item}`, []);
     } else {
       selectedItem = haystack.find(item => {
         if (typeof item === 'object') {
