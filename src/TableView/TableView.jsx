@@ -103,7 +103,7 @@ export const getTableView = (schema, Table = TableComponent, isChildView = false
         );
       } else {
         this.props.initialize(
-          this.props.url,
+          options.customUrl || this.props.url,
           schemaPlural,
           {...options}
         );
